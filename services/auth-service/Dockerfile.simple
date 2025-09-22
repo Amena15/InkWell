@@ -1,0 +1,24 @@
+# Use Node.js LTS
+FROM node:18-alpine
+
+# Install pnpm and corepack
+RUN corepack enable && corepack prepare pnpm@8.6.0 --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package.json pnpm-lock.yaml* tsconfig*.json ./
+
+# Install dependencies
+RUN pnpm install
+
+# Copy source code
+COPY src/ ./src/
+
+# Expose the port
+EXPOSE 3001
+
+# Start the simple auth service
+CMD ["pnpm", "run", "simple"]
+

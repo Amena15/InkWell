@@ -1,0 +1,66 @@
+# Use Node.js LTS
+FROM node:18-alpine AS base
+
+# Install pnpm and corepack
+RUN corepack enable && corepack prepare pnpm@8.6.0 --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package.json pnpm-lock.yaml* tsconfig*.json ./
+
+# Install dependencies with conditional frozen-lockfile
+RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
+
+# Copy source code
+COPY src/ ./src/
+
+# Copy scripts directory if it exists
+RUN if [ -d scripts ] && [ "$(ls -A scripts)" ]; then \
+      mkdir -p /app/scripts && \
+      cp -r scripts/. /app/scripts/; \
+    fi
+
+# Copy markdown files if any exist
+RUN find . -maxdepth 1 -name "*.md" -exec cp {} . \; || true
+
+# Set environment to development for build
+ENV NODE_ENV=development
+
+# Install dev dependencies for building
+RUN pnpm add -D @types/jest @jest/globals
+
+# Build the application
+RUN pnpm run build
+
+# Production stage
+FROM base AS production
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+# Copy built files from the base stage
+COPY --from=base /app/dist ./dist
+COPY --from=base /app/node_modules ./node_modules
+
+# Expose the port the app runs on
+EXPOSE ${PORT:-3000}
+
+# Start the application
+CMD ["node", "dist/index.js"]
+
+# Development stage
+FROM base AS development
+
+# Set environment to development
+ENV NODE_ENV=development
+
+# Expose the port the app runs on
+EXPOSE ${PORT:-3000}
+
+# Start the application with hot-reload
+CMD ["pnpm", "run", "dev"]

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - JWT_SECRET=your_jwt_secret_key_here
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - inkwell-network
+
+networks:
+  inkwell-network:
+    driver: bridge

@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Metrics {
+  id               String   @id @default(cuid())
+  documentId       String   @unique
+  coveragePercent  Float    @default(0)
+  consistencyScore Float    @default(0)
+  lastUpdated      DateTime @default(now())
+  totalChecks      Int      @default(0)
+  passingChecks    Int      @default(0)
+
+  @@map("metrics")
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String    // DOCUMENT_UPDATED, INCONSISTENCY_DETECTED
+  message     String
+  documentId  String
+  read        Boolean   @default(false)
+  metadata    Json?     @default("{}")
+  timestamp   DateTime  @default(now())
+
+  @@index([userId, read])
+  @@index([documentId])
+  @@map("notifications")
+}
