@@ -41,7 +41,7 @@ jobs:
         run: pnpm install
       - name: Run tests
         working-directory: ./backend
-        run: pnpm test
+        run: pnpm test --run src/__tests__/
 
   test-frontend:
     name: Test Frontend
