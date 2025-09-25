@@ -133,9 +133,3 @@ docker-compose up -d
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
-## Contact
-
-Your Name - [@yourtwitter](https://twitter.com/yourtwitter) - email@example.com
-
-Project Link: [https://github.com/yourusername/inkwell](https://github.com/yourusername/inkwell)
