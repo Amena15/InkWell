@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import cookie from '@fastify/cookie';
 import { config } from './config';
 import { authRoutes } from './routes/auth.routes';
 import { authPlugin } from './middleware/auth.middleware';
@@ -28,6 +29,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   app.register(helmet);
+  app.register(cookie);  // Register @fastify/cookie here
 
   // Register auth plugin
   app.register(authPlugin);

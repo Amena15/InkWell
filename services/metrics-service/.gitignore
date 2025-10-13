@@ -5,6 +5,4 @@ node_modules/
 dist/
 build/
 *.log
-coverage/
-test.db
 .DS_Store

@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { AuthProvider } from '@/contexts/auth-context';
+import { NavigationProvider } from '@/context/navigation-context';
 import { authOptions } from '@/lib/auth';
 import './globals.css';
 
@@ -39,13 +40,15 @@ export default async function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <AuthProvider>
-                <NavBar />
-                <main className="container mx-auto py-8 px-4">
-                  {children}
-                </main>
-              </AuthProvider>
-              <Toaster position="top-center" />
+              <NavigationProvider>
+                <AuthProvider>
+                  <NavBar />
+                  <main className="container mx-auto py-8 px-4">
+                    {children}
+                  </main>
+                </AuthProvider>
+                <Toaster position="top-center" />
+              </NavigationProvider>
             </ThemeProvider>
           </Providers>
         </QueryProvider>

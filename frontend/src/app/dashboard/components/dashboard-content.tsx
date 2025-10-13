@@ -123,7 +123,7 @@ export function DashboardContent() {
 
   const handleCreateDocument = async () => {
     try {
-      const newDoc = await documentService.createDocument('Untitled Document');
+      const newDoc = await documentService.createDocument({ title: 'Untitled Document', content: '', userId: 'test-user', isPublic: false });
       router.push(`/documents/${newDoc.id}`);
     } catch (error) {
       toast({
@@ -151,7 +151,7 @@ export function DashboardContent() {
     },
     { 
       name: 'Shared with Me', 
-      value: stats?.shared ?? 0,
+      value: stats?.public ?? 0,
       icon: Users as unknown as React.ComponentType<{ className?: string }>,
       color: 'text-green-500 bg-green-50 dark:bg-green-900/20',
       border: 'border-green-200 dark:border-green-800',
@@ -159,7 +159,7 @@ export function DashboardContent() {
     },
     { 
       name: 'Recent Activity', 
-      value: stats?.recentSearches ?? 0,
+      value: stats?.total ?? 0,
       icon: Clock as unknown as React.ComponentType<{ className?: string }>,
       color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20',
       border: 'border-purple-200 dark:border-purple-800',

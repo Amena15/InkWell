@@ -62,7 +62,7 @@ export function NavBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="text-xl font-bold text-gray-900 hover:text-gray-700">
+            <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               InkWell
             </Link>
           </div>
@@ -80,13 +80,13 @@ export function NavBar() {
               <div className="flex items-center space-x-4">
                 <Link 
                   href="/login" 
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="text-sm font-medium text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md"
                 >
                   Sign in
                 </Link>
                 <Link href="/register">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Sign up free
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90">
+                    Get started
                   </Button>
                 </Link>
               </div>

@@ -113,8 +113,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px] p-4">
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
             Welcome back
@@ -124,7 +124,7 @@ export default function LoginPage() {
           </p>
         </div>
         
-        <div className="grid gap-6">
+        <div className="grid gap-6 bg-white p-6 rounded-xl shadow-sm">
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4">
               <div className="grid gap-1">
@@ -152,7 +152,7 @@ export default function LoginPage() {
                   <Label htmlFor="password">Password</Label>
                   <Link
                     href="/forgot-password"
-                    className="text-sm font-medium text-primary hover:underline"
+                    className="text-sm font-medium text-blue-600 hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -173,7 +173,7 @@ export default function LoginPage() {
                 )}
               </div>
               
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90">
                 {isLoading && (
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                 )}
@@ -193,7 +193,7 @@ export default function LoginPage() {
             </div>
           </div>
           
-          <Button variant="outline" type="button" disabled={isLoading}>
+          <Button variant="outline" type="button" disabled={isLoading} className="border-gray-300 hover:bg-gray-50">
             {isLoading ? (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -207,7 +207,7 @@ export default function LoginPage() {
           Don&apos;t have an account?{' '}
           <Link
             href="/register"
-            className="hover:text-brand underline underline-offset-4"
+            className="hover:text-blue-600 underline underline-offset-4"
           >
             Sign up
           </Link>

@@ -13,6 +13,7 @@ type FastifyInstanceWithJWT = FastifyInstance & {
 const authMiddleware: FastifyPluginAsync = async (fastify: FastifyInstanceWithJWT) => {
   // Public routes that don't require authentication
   const publicRoutes = [
+    { path: '/', methods: ['GET'] },
     { path: '/health', methods: ['GET'] },
     { path: '/auth/login', methods: ['POST'] },
     { path: '/auth/register', methods: ['POST'] },

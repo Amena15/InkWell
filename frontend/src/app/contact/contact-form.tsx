@@ -29,11 +29,24 @@ export function ContactForm() {
     setIsSubmitting(true);
     
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send message');
+      }
+
       setIsSubmitted(true);
     } catch (error) {
       console.error('Error submitting form:', error);
+      // You might want to show an error toast here
     } finally {
       setIsSubmitting(false);
     }

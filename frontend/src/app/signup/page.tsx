@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CommonIcons } from '@/components/icons';
+import { CommonIcons } from '@/components/icons.tsx';
 import { useToast } from '@/components/ui/use-toast';
 
 interface SignupResponse {

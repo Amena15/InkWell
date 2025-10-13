@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendContactEmail } from '@/lib/mailer';
 
 export async function POST(request: Request) {
   try {
     const { name, email, subject, message } = await request.json();
 
-    // Basic validation
+    // Validation
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
         { error: 'All fields are required' },
@@ -15,63 +13,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // Send email to support
-    await resend.emails.send({
-      from: 'InkWell Support <support@inkwell.com>',
-      to: 'support@inkwell.com',
-      subject: `New Contact Form Submission: ${subject}`,
-      text: `
-        Name: ${name}
-        Email: ${email}
-        Subject: ${subject}
-        Message: ${message}
-      `,
-      html: `
-        <div>
-          <h2>New Contact Form Submission</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Subject:</strong> ${subject}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message.replace(/\n/g, '<br>')}</p>
-        </div>
-      `,
-    });
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Please provide a valid email address' },
+        { status: 400 }
+      );
+    }
 
-    // Send confirmation email to user
-    await resend.emails.send({
-      from: 'InkWell Support <support@inkwell.com>',
-      to: email,
-      subject: 'We\'ve received your message',
-      text: `
-        Dear ${name},
+    // Send email to monybaabad@gmail.com
+    await sendContactEmail(name, email, subject, message, 'monybaabad@gmail.com');
 
-        Thank you for contacting InkWell. We've received your message and our team will get back to you as soon as possible.
-
-        Here's a copy of your message:
-        ${message}
-
-        Best regards,
-        The InkWell Team
-      `,
-      html: `
-        <div>
-          <p>Dear ${name},</p>
-          <p>Thank you for contacting InkWell. We've received your message and our team will get back to you as soon as possible.</p>
-          <p>Here's a copy of your message:</p>
-          <blockquote style="border-left: 4px solid #ddd; padding-left: 1em; margin: 1em 0; color: #666; font-style: italic;">
-            ${message.replace(/\n/g, '<br>')}
-          </blockquote>
-          <p>Best regards,<br>The InkWell Team</p>
-        </div>
-      `,
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error processing contact form:', error);
     return NextResponse.json(
-      { error: 'Failed to process your request. Please try again later.' },
+      { message: 'Message sent successfully!' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Contact form error:', error);
+    return NextResponse.json(
+      { error: 'Failed to send message. Please try again.' },
       { status: 500 }
     );
   }

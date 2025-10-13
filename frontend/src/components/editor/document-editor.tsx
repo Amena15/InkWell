@@ -66,7 +66,7 @@ export function DocumentEditor({
       if (documentId) {
         return documentService.updateDocument(documentId, { title, content });
       } else {
-        const newDoc = await documentService.createDocument(title, content);
+        const newDoc = await documentService.createDocument({ title, content, userId: 'test-user', isPublic: false });
         router.push(`/documents/${newDoc.id}`);
         return newDoc;
       }

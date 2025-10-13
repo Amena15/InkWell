@@ -44,103 +44,100 @@ export default function Dashboard() {
   const recentDocs = recentDocuments?.data || [];
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Welcome back, User</h1>
-          <p className="text-muted-foreground">Here's what's happening with your documents</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Welcome back, User</h1>
+          <p className="text-gray-600">Here's what's happening with your documents</p>
         </div>
-        <Button className="gap-2" asChild>
-          <Link href="/documents/new">
-            <Plus className="h-4 w-4" /> New Document
-          </Link>
-        </Button>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:bg-accent/50 transition-colors">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Documents</CardTitle>
+        {/* Quick Actions */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-700">Total Documents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{stats?.totalDocuments || 0}</div>
+              <p className="text-xs text-green-600">+5 from last month</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-700">Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">{stats?.recentDocuments || 0}</div>
+              <p className="text-xs text-green-600">Updates this week</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Documents */}
+        <Card className="bg-white shadow-sm">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div>
+                <CardTitle>Recent Documents</CardTitle>
+                <CardDescription>Your most recently opened documents</CardDescription>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  type="search"
+                  placeholder="Search documents..."
+                  className="pl-8 w-full sm:w-[300px]"
+                />
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalDocuments || 0}</div>
-            <p className="text-xs text-muted-foreground">+5 from last month</p>
+            <div className="space-y-4">
+              {isLoadingDocuments ? (
+                Array(3).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-gray-200 rounded-md animate-pulse" />
+                      <div className="space-y-2">
+                        <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
+                  </div>
+                ))
+              ) : (
+                recentDocs.map((doc) => (
+                  <div 
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">{doc.title}</p>
+                        <p className="text-sm text-gray-500">Updated {doc.updatedAt}</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
           </CardContent>
-        </Card>
-        
-        <Card className="hover:bg-accent/50 transition-colors">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.recentDocuments || 0}</div>
-            <p className="text-xs text-muted-foreground">Updates this week</p>
-          </CardContent>
+          <CardFooter className="border-t border-gray-200 px-6 py-3">
+            <Link href="/documents">
+              <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">
+                View all documents
+              </Button>
+            </Link>
+          </CardFooter>
         </Card>
       </div>
-
-      {/* Recent Documents */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-            <div>
-              <CardTitle>Recent Documents</CardTitle>
-              <CardDescription>Your most recently opened documents</CardDescription>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search documents..."
-                className="pl-8 w-full sm:w-[300px]"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {isLoadingDocuments ? (
-              Array(3).fill(0).map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-muted rounded-md animate-pulse" />
-                    <div className="space-y-2">
-                      <div className="h-4 w-48 bg-muted rounded animate-pulse" />
-                      <div className="h-3 w-24 bg-muted rounded animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="h-8 w-8 bg-muted rounded-full animate-pulse" />
-                </div>
-              ))
-            ) : (
-              recentDocs.map((doc) => (
-                <div 
-                  key={doc.id}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{doc.title}</p>
-                      <p className="text-sm text-muted-foreground">Updated {doc.updatedAt}</p>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="border-t px-6 py-3">
-          <Button variant="ghost" className="text-primary">
-            View all documents
-          </Button>
-        </CardFooter>
-      </Card>
     </div>
   );
 }

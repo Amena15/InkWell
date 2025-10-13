@@ -8,19 +8,23 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div>
-      <div className="bg-background">
-        <div className="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Hero Section */}
+      <section className="py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-              Contact Us
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Get in Touch
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                With Us
+              </span>
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Have questions or feedback? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
           </div>
         </div>
-      </div>
+      </section>
       
       <ContactForm />
     </div>

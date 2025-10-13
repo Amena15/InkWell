@@ -4,17 +4,17 @@ services:
   # Database
   postgres:
     image: postgres:15-alpine
-    container_name: inkwell-db
+    container_name: inkwell-db-prod
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: inkwell
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-inkwell}
     ports:
       - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,13 +24,13 @@ services:
   # Message Broker
   rabbitmq:
     image: rabbitmq:3.12-management
-    container_name: inkwell-rabbitmq
+    container_name: inkwell-rabbitmq-prod
     ports:
       - '5672:5672'   # AMQP protocol
-      - '15672:15672' # Management UI
+      - '15672:15672' # Management UI (consider removing in prod for security)
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -46,18 +46,20 @@ services:
     build:
       context: ./services/api-gateway
       dockerfile: ../../Dockerfile.service
-    container_name: inkwell-api-gateway
+    container_name: inkwell-api-gateway-prod
     ports:
-      - '3000:3000'
+      - '3001:3000'
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3000
       - AUTH_SERVICE_URL=http://auth-service:3001
       - DOCS_SERVICE_URL=http://docs-service:3002
       - AI_SERVICE_URL=http://ai-service:3003
       - METRICS_SERVICE_URL=http://metrics-service:3004
       - NOTIFICATIONS_SERVICE_URL=http://notifications-service:3005
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - .env  # Load secrets from .env file
     depends_on:
       - auth-service
       - docs-service
@@ -72,14 +74,16 @@ services:
     build:
       context: ./services/auth-service
       dockerfile: ../../Dockerfile.service
-    container_name: inkwell-auth-service
+    container_name: inkwell-auth-service-prod
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3001
       - SERVICE_NAME=auth-service
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=auth
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-inkwell}?schema=auth
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - .env
     depends_on:
       - postgres
       - rabbitmq
@@ -91,14 +95,16 @@ services:
     build:
       context: ./services/docs-service
       dockerfile: ../../Dockerfile.service
-    container_name: inkwell-docs-service
+    container_name: inkwell-docs-service-prod
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3002
       - SERVICE_NAME=docs-service
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=docs
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-inkwell}?schema=docs
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - .env
     depends_on:
       - postgres
       - rabbitmq
@@ -110,15 +116,17 @@ services:
     build:
       context: ./services/ai-service
       dockerfile: ../../Dockerfile.service
-    container_name: inkwell-ai-service
+    container_name: inkwell-ai-service-prod
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3003
       - SERVICE_NAME=ai-service
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=ai
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-inkwell}?schema=ai
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    env_file:
+      - .env
     depends_on:
       - postgres
       - rabbitmq
@@ -130,14 +138,16 @@ services:
     build:
       context: ./services/metrics-service
       dockerfile: ../../Dockerfile.service
-    container_name: inkwell-metrics-service
+    container_name: inkwell-metrics-service-prod
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3004
       - SERVICE_NAME=metrics-service
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=metrics
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-inkwell}?schema=metrics
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - .env
     depends_on:
       - postgres
       - rabbitmq
@@ -149,14 +159,16 @@ services:
     build:
       context: ./services/notifications-service
       dockerfile: ../../Dockerfile.service
-    container_name: inkwell-notifications-service
+    container_name: inkwell-notifications-service-prod
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - PORT=3005
       - SERVICE_NAME=notifications-service
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=notifications
-      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-inkwell}?schema=notifications
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    env_file:
+      - .env
     depends_on:
       - postgres
       - rabbitmq
@@ -168,19 +180,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-      target: development
-    container_name: frontend
+      target: development  # Use production stage
+    container_name: inkwell-frontend-prod
     ports:
       - '3006:3000'
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://api-gateway:3000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    working_dir: /app
-    command: sh -c "pnpm install && pnpm run dev"
+    env_file:
+      - .env
     depends_on:
       - api-gateway
     networks:
