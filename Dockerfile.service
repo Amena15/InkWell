@@ -15,6 +15,7 @@ RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm ins
 
 # Copy source code
 COPY src/ ./src/
+COPY prisma/ ./prisma/
 
 # Copy scripts directory if it exists
 RUN if [ -d scripts ] && [ "$(ls -A scripts)" ]; then \

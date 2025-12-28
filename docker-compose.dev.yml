@@ -1,0 +1,213 @@
+version: '3.8'
+
+services:
+  # Database (shared with production)
+  postgres:
+    image: postgres:15-alpine
+    container_name: inkwell-db-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inkwell
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - inkwell-network
+
+  # Message Broker (shared with production)
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: inkwell-rabbitmq-dev
+    ports:
+      - '5672:5672'   # AMQP protocol
+      - '15672:15672' # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - inkwell-network
+
+  # API Gateway (Development)
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: ../../Dockerfile.service
+    container_name: inkwell-api-gateway-dev
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - DOCS_SERVICE_URL=http://docs-service:3002
+      - AI_SERVICE_URL=http://ai-service:3003
+      - METRICS_SERVICE_URL=http://metrics-service:3004
+      - NOTIFICATIONS_SERVICE_URL=http://notifications-service:3005
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./services/api-gateway:/app  # Mount source for hot reloading
+      - /app/node_modules
+    depends_on:
+      - auth-service
+      - docs-service
+      - ai-service
+      - metrics-service
+      - notifications-service
+    networks:
+      - inkwell-network
+
+  # Auth Service (Development)
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: ../../Dockerfile.service
+    container_name: inkwell-auth-service-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - SERVICE_NAME=auth-service
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=auth
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./services/auth-service:/app  # Mount source for hot reloading
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - inkwell-network
+
+  # Docs Service (Development)
+  docs-service:
+    build:
+      context: ./services/docs-service
+      dockerfile: ../../Dockerfile.service
+    container_name: inkwell-docs-service-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - SERVICE_NAME=docs-service
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=docs
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./services/docs-service:/app  # Mount source for hot reloading
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - inkwell-network
+
+  # AI Service (Development)
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: ../../Dockerfile.service
+    container_name: inkwell-ai-service-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - SERVICE_NAME=ai-service
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=ai
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - ./services/ai-service:/app  # Mount source for hot reloading
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - inkwell-network
+
+  # Metrics Service (Development)
+  metrics-service:
+    build:
+      context: ./services/metrics-service
+      dockerfile: ../../Dockerfile.service
+    container_name: inkwell-metrics-service-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - SERVICE_NAME=metrics-service
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=metrics
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./services/metrics-service:/app  # Mount source for hot reloading
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - inkwell-network
+
+  # Notifications Service (Development)
+  notifications-service:
+    build:
+      context: ./services/notifications-service
+      dockerfile: ../../Dockerfile.service
+    container_name: inkwell-notifications-service-dev
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - SERVICE_NAME=notifications-service
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5433/inkwell?schema=notifications
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./services/notifications-service:/app  # Mount source for hot reloading
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - inkwell-network
+
+  # Frontend (Next.js) - Development
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: development  # Use development stage
+    container_name: inkwell-frontend-dev
+    ports:
+      - '3006:3000'
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3000  # For external access, adjust if needed
+    volumes:
+      - ./frontend:/app/frontend  # Mount frontend source for hot reloading
+      - /app/node_modules
+      - /app/.next
+    working_dir: /app/frontend
+    command: pnpm run dev  # Use dev server for hot reloading
+    depends_on:
+      - api-gateway
+    networks:
+      - inkwell-network
+
+networks:
+  inkwell-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

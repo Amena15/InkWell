@@ -67,18 +67,18 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="w-full max-w-md space-y-8 p-4">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-gray-900">Create an account</h2>
-          <Button asChild variant="outline" className="w-full">
+          <Button asChild variant="outline" className="w-full mt-2">
             <Link href="/login" className="flex items-center justify-center w-full h-full" passHref>
               Already have an account? Sign in
             </Link>
           </Button>
         </div>
 
-        <Card className="p-6">
+        <Card className="p-6 bg-white shadow-sm">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {error && (
@@ -147,7 +147,7 @@ export default function RegisterPage() {
               <div>
                 <Button 
                   type="submit" 
-                  className="w-full" 
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90" 
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
@@ -166,11 +166,11 @@ export default function RegisterPage() {
           <div className="mt-4 text-center text-sm">
             <p className="text-muted-foreground">
               By creating an account, you agree to our{' '}
-              <Link href="/terms" className="font-medium text-primary hover:underline" passHref>
+              <Link href="/terms" className="font-medium text-blue-600 hover:underline" passHref>
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link href="/privacy" className="font-medium text-primary hover:underline" passHref>
+              <Link href="/privacy" className="font-medium text-blue-600 hover:underline" passHref>
                 Privacy Policy
               </Link>
               .

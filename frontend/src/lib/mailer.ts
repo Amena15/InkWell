@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { render } from '@react-email/render';
 import { VerificationEmail } from '@/emails/verification-email';
 import { ResetPasswordEmail } from '@/emails/reset-password-email';
+import { ContactEmail } from '@/emails/contact-email';
 
 // Ensure required environment variables are set
 const EMAIL_SERVER_HOST = process.env.EMAIL_SERVER_HOST || '';
@@ -48,6 +49,19 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
     from: `"${EMAIL_FROM_NAME}" <${EMAIL_FROM}>`,
     to: email,
     subject: 'Reset your password',
+    html: emailHtml,
+  });
+}
+
+export async function sendContactEmail(name: string, email: string, subject: string, message: string, sendTo: string): Promise<void> {
+  const emailHtml = await render(
+    ContactEmail({ name, email, subject, message })
+  ) as string;
+
+  await transporter.sendMail({
+    from: `"${name}" <${email}>`,
+    to: sendTo,
+    subject: `Contact Form: ${subject}`,
     html: emailHtml,
   });
 }
