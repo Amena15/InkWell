@@ -1,5 +1,7 @@
 import { getSession } from 'next-auth/react';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 type RequestBody = BodyInit | Record<string, any> | undefined;
 
 interface RequestOptions extends Omit<RequestInit, 'body' | 'headers'> {
@@ -18,6 +20,46 @@ interface SessionWithToken {
   };
   accessToken?: string;
   expires: string;
+}
+
+interface ApiResponse<T = any> {
+  data?: T;
+  error?: string;
+}
+
+async function apiRequest<T = any>(
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  path: string,
+  data?: any,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      credentials: 'include',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { 
+        error: errorData.message || `HTTP error! status: ${response.status}` 
+      };
+    }
+
+    const responseData = await response.json().catch(() => ({}));
+    return { data: responseData };
+  } catch (error) {
+    console.error('API Request Error:', error);
+    return { 
+      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    };
+  }
 }
 
 export async function api<T = any>(
@@ -46,7 +88,7 @@ export async function api<T = any>(
       ? body 
       : JSON.stringify(body);
 
-    const response = await fetch(`/api${endpoint}`, {
+    const response = await fetch(`${API_BASE_URL}/api${endpoint}`, {
       ...fetchOptions,
       body: requestBody,
       headers: {
@@ -116,3 +158,19 @@ export const apiClient = {
       body,
     }),
 };
+
+export const apiUtil = {
+  get: <T = any>(path: string, options?: RequestInit) => 
+    apiRequest<T>('GET', path, undefined, options),
+    
+  post: <T = any>(path: string, data?: any, options?: RequestInit) => 
+    apiRequest<T>('POST', path, data, options),
+    
+  put: <T = any>(path: string, data?: any, options?: RequestInit) => 
+    apiRequest<T>('PUT', path, data, options),
+    
+  delete: <T = any>(path: string, options?: RequestInit) => 
+    apiRequest<T>('DELETE', path, undefined, options),
+};
+
+export default apiUtil;

@@ -4,20 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import dynamic from 'next/dynamic';
-import type { LucideProps } from 'lucide-react';
-import { forwardRef } from 'react';
+import { RefreshCw, Plus, FileText, Users, Clock, FileSearch, Upload, Search } from 'lucide-react';
 import documentService from '@/services/document.service';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { DocumentListSkeleton, StatsSkeleton } from '@/components/loading-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface DocumentStats {
-  total: number;
-  shared: number;
-  recentSearches: number;
-}
 
 interface StatItem {
   name: string;
@@ -28,137 +20,93 @@ interface StatItem {
   loading: boolean;
 }
 
-const RefreshCw = dynamic(() => import('lucide-react').then(mod => mod.RefreshCw));
-const Plus = dynamic(() => import('lucide-react').then(mod => mod.Plus));
-const FileText = dynamic(() => import('lucide-react').then(mod => mod.FileText));
-const Users = dynamic(() => import('lucide-react').then(mod => mod.Users));
-const Clock = dynamic(() => import('lucide-react').then(mod => mod.Clock));
-const FileSearch = dynamic(() => import('lucide-react').then(mod => mod.FileSearch));
-const Upload = dynamic(() => import('lucide-react').then(mod => mod.Upload));
-const Search = dynamic(() => import('lucide-react').then(mod => mod.Search));
-
-const RefreshIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <RefreshCw ref={ref} {...props} />
-));
-RefreshIconComponent.displayName = 'RefreshIcon';
-
-const PlusIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <Plus ref={ref} {...props} />
-));
-PlusIconComponent.displayName = 'PlusIcon';
-
-const FileTextIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <FileText ref={ref} {...props} />
-));
-FileTextIconComponent.displayName = 'FileTextIcon';
-
-const UsersIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <Users ref={ref} {...props} />
-));
-UsersIconComponent.displayName = 'UsersIcon';
-
-const ClockIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <Clock ref={ref} {...props} />
-));
-ClockIconComponent.displayName = 'ClockIcon';
-
-const FileSearchIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <FileSearch ref={ref} {...props} />
-));
-FileSearchIconComponent.displayName = 'FileSearchIcon';
-
-const UploadIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <Upload ref={ref} {...props} />
-));
-UploadIconComponent.displayName = 'UploadIcon';
-
-const SearchIconComponent = forwardRef<SVGSVGElement, LucideProps>((props, ref) => (
-  <Search ref={ref} {...props} />
-));
-SearchIconComponent.displayName = 'SearchIcon';
-
+/**
+ * Dashboard Content Component
+ * Displays key metrics and recent activity for the user's documents
+ * Includes: document statistics cards, recent document list, and quick actions
+ */
 export function DashboardContent() {
   const router = useRouter();
 
-  // Fetch recent documents
-  const { 
-    data: recentDocuments, 
-    isLoading: isLoadingRecent, 
-    isError: isErrorRecent, 
-    refetch: refetchRecent 
+  // Fetch recent documents with caching and retry logic
+  const {
+    data: recentDocuments,
+    isLoading: isLoadingRecent,
+    isError: isErrorRecent,
+    refetch: refetchRecent
   } = useQuery({
     queryKey: ['recent-documents'],
-    queryFn: () => documentService.getRecentDocuments(5),
+    queryFn: () => documentService.getRecentDocuments(5), // Get 5 most recent documents
     retry: 2,
   });
 
-  // Fetch document stats
-  const { 
-    data: stats, 
-    isLoading: isLoadingStats, 
-    isError: isErrorStats, 
-    refetch: refetchStats 
+  // Fetch document statistics with caching and retry logic
+  const {
+    data: stats,
+    isLoading: isLoadingStats,
+    isError: isErrorStats,
+    refetch: refetchStats
   } = useQuery({
     queryKey: ['document-stats'],
-    queryFn: documentService.getDocumentStats,
+    queryFn: () => documentService.getDocumentStats(), // Get user's document statistics
     retry: 2,
   });
 
   // Handle errors with toast notifications
   if (isErrorRecent) {
-    toast({
-      title: 'Error',
-      description: 'Failed to load recent documents',
-      variant: 'destructive',
-    });
+    toast.error('Failed to load recent documents');
   }
 
   if (isErrorStats) {
-    toast({
-      title: 'Error',
-      description: 'Failed to load document statistics',
-      variant: 'destructive',
-    });
+    toast.error('Failed to load document statistics');
   }
 
+  // Create a new document and navigate to it
   const handleCreateDocument = async () => {
     try {
-      const newDoc = await documentService.createDocument('Untitled Document');
+      const newDoc = await documentService.createDocument({
+        title: 'Untitled Document',
+        content: '# Welcome to Your New Document\n\nStart writing here...',
+        isPublic: false
+      });
       router.push(`/documents/${newDoc.id}`);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to create a new document',
-        variant: 'destructive',
-      });
+      toast.error('Failed to create a new document');
     }
   };
 
+  // Retry failed API requests
   const handleRetry = () => {
-    if (isErrorRecent) refetchRecent();
-    if (isErrorStats) refetchStats();
+    if (isErrorRecent) {
+      toast.info('Retrying to load recent documents...');
+      refetchRecent();
+    }
+    if (isErrorStats) {
+      toast.info('Retrying to load document statistics...');
+      refetchStats();
+    }
   };
 
-  // Stats configuration with icons and colors
+  // Configuration for statistics cards - defines what stats to display
   const statsConfig: StatItem[] = [
-    { 
-      name: 'Total Documents', 
+    {
+      name: 'Total Documents',
       value: stats?.total ?? 0,
       icon: FileText as unknown as React.ComponentType<{ className?: string }>,
       color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',
       border: 'border-blue-200 dark:border-blue-800',
       loading: isLoadingStats
     },
-    { 
-      name: 'Shared with Me', 
+    {
+      name: 'Shared with Me',
       value: stats?.shared ?? 0,
       icon: Users as unknown as React.ComponentType<{ className?: string }>,
       color: 'text-green-500 bg-green-50 dark:bg-green-900/20',
       border: 'border-green-200 dark:border-green-800',
       loading: isLoadingStats
     },
-    { 
-      name: 'Recent Activity', 
+    {
+      name: 'Recent Activity',
       value: stats?.recentSearches ?? 0,
       icon: Clock as unknown as React.ComponentType<{ className?: string }>,
       color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20',
@@ -170,20 +118,20 @@ export function DashboardContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col space-y-2 md:flex-row md:items-center md:justify-between md:space-y-0">
+      <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-2">
             Welcome back! Here's what's happening with your documents.
           </p>
         </div>
         <div className="flex space-x-2">
           {(isErrorRecent || isErrorStats) && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleRetry}
               className="flex items-center gap-1"
             >
@@ -191,7 +139,7 @@ export function DashboardContent() {
               <span>Retry</span>
             </Button>
           )}
-          <Button 
+          <Button
             onClick={handleCreateDocument}
             className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
           >
@@ -217,8 +165,8 @@ export function DashboardContent() {
           {statsConfig.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card 
-                key={stat.name} 
+              <Card
+                key={stat.name}
                 className={`border ${stat.border} hover:shadow-md transition-shadow duration-200`}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -244,9 +192,10 @@ export function DashboardContent() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        {/* Recent Documents */}
-        <Card className="col-span-4 border border-gray-200 dark:border-gray-800">
+      {/* Combined Documents and Actions Section */}
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Recent Documents - takes up 8 columns */}
+        <Card className="lg:col-span-8 border border-gray-200 dark:border-gray-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -286,9 +235,9 @@ export function DashboardContent() {
                         Updated {formatDistanceToNow(new Date(doc.updatedAt), { addSuffix: true })}
                       </p>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       Open
@@ -307,8 +256,8 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <Card className="col-span-3 border border-gray-200 dark:border-gray-800">
+        {/* Quick Actions - takes up 4 columns */}
+        <Card className="lg:col-span-4 border border-gray-200 dark:border-gray-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -321,8 +270,8 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full justify-start gap-2 h-12 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
                 onClick={handleCreateDocument}
               >
@@ -331,9 +280,9 @@ export function DashboardContent() {
                 </div>
                 <span>New Document</span>
               </Button>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 className="w-full justify-start gap-2 h-12 text-left hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-200 dark:hover:border-green-800 transition-colors"
                 onClick={() => document.getElementById('file-upload')?.click()}
               >
@@ -343,9 +292,9 @@ export function DashboardContent() {
                 <span>Upload Files</span>
                 <input type="file" id="file-upload" className="hidden" multiple />
               </Button>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 className="w-full justify-start gap-2 h-12 text-left hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-200 dark:hover:border-purple-800 transition-colors"
                 onClick={() => {
                   const searchInput = document.getElementById('global-search');

@@ -5,6 +5,8 @@ const JWT_EXPIRES_IN = '7d';
 
 type TokenPayload = {
   userId: string;
+  email?: string;
+  purpose?: string;
 };
 
 export function signJwt(payload: TokenPayload): string {
@@ -18,6 +20,7 @@ export function verifyJwt(token: string): TokenPayload | null {
     const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
     return {
       userId: decoded.userId,
+      email: decoded.email,
     };
   } catch (error) {
     console.error('JWT verification failed:', error);

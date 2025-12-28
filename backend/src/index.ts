@@ -5,9 +5,12 @@ import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import { config } from './config';
 import { PrismaClient } from '@prisma/client';
+import { AuthController } from './controllers/auth.controller';
+import { AuthService } from './auth/auth.service';
+import { umlRoutes } from './routes/uml.route';
+import { aiRoutes } from './routes/ai.route';
 
 export const prisma = new PrismaClient();
-
 const server = Fastify({
   logger: {
     level: 'info',
@@ -48,10 +51,29 @@ server.register(fastifySwaggerUi, {
   staticCSP: true,
 });
 
+// Initialize controllers
+const authService = new AuthService(prisma);
+const authController = new AuthController(authService);
+
 // Health check endpoint
 server.get('/health', async () => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
+
+// Root endpoint
+server.get('/', async () => {
+  return { 
+    message: 'Welcome to InkWell AI API',
+    docs: '/docs',
+    status: 'operational',
+    timestamp: new Date().toISOString()
+  };
+});
+
+// Auth routes
+server.post('/api/auth/register', authController.register.bind(authController));
+server.post('/api/auth/login', authController.login.bind(authController));
+server.get('/api/auth/me', { preHandler: [] }, authController.me.bind(authController));
 
 // Example protected route
 server.get<{ Querystring: { name?: string } }>(
@@ -79,6 +101,12 @@ server.get<{ Querystring: { name?: string } }>(
     return { message: `Hello ${name}!` };
   },
 );
+
+// Register UML generation routes
+umlRoutes(server);
+
+// Register AI analysis routes
+aiRoutes(server);
 
 // Error handling
 server.setErrorHandler((error, request, reply) => {

@@ -1,27 +1,38 @@
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth';
+import { getServerSession } from 'next-auth/next';
+import authOptions from '@/lib/auth-options';
+import type { User } from 'next-auth';
 
 export async function GET() {
   try {
-    const user = await requireAuth();
+    const session = await getServerSession(authOptions);
     
-    if (user instanceof NextResponse) {
-      return user; // This will be the redirect response if not authenticated
+    if (!session?.user) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Not authenticated' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
     }
+
+    const userData = session.user as User & { role?: string };
 
     return NextResponse.json({
       message: 'This is a protected route',
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
       },
     });
   } catch (error) {
     console.error('Protected route error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 }

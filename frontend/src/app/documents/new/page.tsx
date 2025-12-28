@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth';
+import authOptions from '@/lib/auth-options';
 import { DocumentEditor } from '@/components/editor/document-editor';
-import { authOptions } from '@/lib/auth';
 
 export default async function NewDocumentPage() {
   const session = await getServerSession(authOptions);

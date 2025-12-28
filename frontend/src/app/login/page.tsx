@@ -10,26 +10,70 @@ import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/icons';
 import { useToast } from '@/components/ui/use-toast';
 
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
   const { toast } = useToast();
   const { status } = useSession();
+  const registered = searchParams?.get('registered');
+  const emailParam = searchParams?.get('email');
+  const passwordParam = searchParams?.get('password');
   
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   
-  // Redirect if already authenticated
+  // Redirect to dashboard if already authenticated
   useEffect(() => {
     if (status === 'authenticated') {
       router.push(callbackUrl);
     }
   }, [status, callbackUrl, router]);
+
+  useEffect(() => {
+    if (registered) {
+      toast({
+        title: 'Account created',
+        description: 'Sign in with your new credentials to continue.',
+      });
+
+      const params = new URLSearchParams(searchParams?.toString() || '');
+      params.delete('registered');
+      const query = params.toString();
+      router.replace(query ? `/login?${query}` : '/login', { scroll: false });
+    }
+  }, [registered, router, searchParams, toast]);
+
+  useEffect(() => {
+    if (!emailParam && !passwordParam) return;
+
+    setFormData(prev => ({
+      email: emailParam ?? prev.email,
+      password: passwordParam ?? prev.password,
+    }));
+
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.delete('email');
+    params.delete('password');
+    const query = params.toString();
+    router.replace(query ? `/login?${query}` : '/login', { scroll: false });
+  }, [emailParam, passwordParam, router, searchParams]);
+
+  const showForm = status !== 'authenticated';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,12 +83,10 @@ export default function LoginPage() {
     }));
     
     // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+    setErrors(prev => ({
+      ...prev,
+      [name]: undefined,
+    }));
   };
 
   const validateForm = () => {
@@ -74,6 +116,30 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
+      // First, try to authenticate with the backend
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      // Handle email verification required
+      if (data.requiresVerification) {
+        return router.push(`/verify-email?email=${encodeURIComponent(data.email)}&token=${data.token}`);
+      }
+
+      // Handle other errors
+      if (!response.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      // If we get here, the login was successful
+      // Now sign in with NextAuth to establish the session
       const result = await signIn('credentials', {
         redirect: false,
         email: formData.email,
@@ -82,21 +148,15 @@ export default function LoginPage() {
       });
       
       if (result?.error) {
-        toast({
-          title: 'Error',
-          description: result.error === 'CredentialsSignin' 
-            ? 'Invalid email or password' 
-            : 'An error occurred. Please try again.',
-          variant: 'destructive',
-        });
-      } else {
-        // Redirect is handled by the session callback
-        router.push(callbackUrl);
+        throw new Error(result.error);
       }
-    } catch (error) {
+      
+      router.replace(result?.url ?? callbackUrl);
+    } catch (error: any) {
+      console.error('Login error:', error);
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        title: 'Login Failed',
+        description: error.message || 'An error occurred during login. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -104,10 +164,12 @@ export default function LoginPage() {
     }
   };
 
-  if (status === 'loading' || status === 'authenticated') {
+  if (!showForm) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Icons.spinner className="h-8 w-8 animate-spin" />
+        <div className="h-8 w-8 animate-spin">
+          <Icons.spinner className="h-full w-full text-primary" />
+        </div>
       </div>
     );
   }

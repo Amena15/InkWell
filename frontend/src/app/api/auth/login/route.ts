@@ -1,74 +1,43 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
-import { signJwt } from '@/lib/jwt';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+const API_BASE_URL =
+  process.env.BACKEND_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:3001';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { email, password } = loginSchema.parse(body);
+    const payload = await req.json();
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user || !user.password) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
-    }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
-    }
-
-    // Generate JWT token
-    const token = signJwt({ userId: user.id });
-
-    // Set HTTP-only cookie
-    const response = NextResponse.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(payload),
     });
 
-    response.cookies.set({
-      name: 'token',
-      value: token,
-      httpOnly: true,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-    });
+    const data = await response.json().catch(() => ({}));
 
-    return response;
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (!response.ok) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
+        {
+          error: data.error || 'Invalid email or password',
+          requiresVerification: data.requiresVerification,
+          email: data.email,
+        },
+        { status: response.status },
       );
     }
+
+    // For NextAuth compatibility, we don't set the token as a cookie here
+    // NextAuth handles the session token internally
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
       { error: 'An error occurred during login' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

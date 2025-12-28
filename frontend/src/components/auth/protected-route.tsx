@@ -1,3 +1,5 @@
+"use client";
+
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, ReactNode } from 'react';
@@ -50,13 +52,14 @@ export function ProtectedRoute({
   }
 
   if (status === 'unauthenticated' || !session?.user) {
-    return null; // The useEffect will handle the redirect
+    // Return the loading component or unauthorized component while redirecting
+    return <>{loadingComponent}</>;
   }
 
-  const user = session.user as UserWithRole;
+  const userRole = session.user?.role;
 
   // Check if the user has the required role if specified
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && userRole !== requiredRole) {
     return <>{unauthorizedComponent}</>;
   }
 

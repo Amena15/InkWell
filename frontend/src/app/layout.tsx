@@ -1,54 +1,27 @@
+import * as React from 'react';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { getServerSession } from 'next-auth/next';
-import { Toaster } from 'sonner';
-import { Providers } from './providers';
-import { NavBar } from '@/components/navbar';
-import { cn } from '@/lib/utils';
-import { ThemeProvider } from '@/components/providers/theme-provider';
-import { QueryProvider } from '@/components/providers/query-provider';
-import { AuthProvider } from '@/contexts/auth-context';
-import { authOptions } from '@/lib/auth';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
+import { Providers } from '@/providers';
 
 export const metadata: Metadata = {
-  title: 'InkWell',
-  description: 'Your personal writing space',
+  title: "InkWell - AI-Powered Writing Assistant",
+  description: "Create, edit, and optimize content with AI",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const session = await getServerSession(authOptions);
+const inter = Inter({ subsets: ["latin"] });
 
+interface RootLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.google.com; frame-src 'self' https://accounts.google.com" />
-      </head>
-      <body className={cn(inter.className, 'min-h-screen bg-background')}>
-        <QueryProvider>
-          <Providers session={session}>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <AuthProvider>
-                <NavBar />
-                <main className="container mx-auto py-8 px-4">
-                  {children}
-                </main>
-              </AuthProvider>
-              <Toaster position="top-center" />
-            </ThemeProvider>
-          </Providers>
-        </QueryProvider>
+      <body className={inter.className}>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

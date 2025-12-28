@@ -1,7 +1,7 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -14,16 +14,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { quickActions, navSections } from '@/config/navigation';
+import { useNavigation } from '@/context/navigation-context';
+import { Bell, Sparkles } from 'lucide-react';
 
 export function NavBar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const router = useRouter();
+  const { toggleSidebar } = useNavigation();
 
   const handleSignOut = async () => {
     try {
       // Clear the session and cookies
-      const data = await signOut({ 
+      const data = await signOut({
         redirect: false,
         callbackUrl: '/'
       });
@@ -45,12 +49,15 @@ export function NavBar() {
   // Show loading state while session is being fetched
   if (status === 'loading') {
     return (
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex-1">
-              <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
-            </div>
+      <header className="bg-background border-b sticky top-0 z-50">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <div className="flex items-center space-x-4">
+            <Link href="/" className="font-bold text-xl">
+              InkWell
+            </Link>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
           </div>
         </div>
       </header>
@@ -58,77 +65,89 @@ export function NavBar() {
   }
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="text-xl font-bold text-gray-900 hover:text-gray-700">
-              InkWell
-            </Link>
-          </div>
-          <div className="hidden md:flex items-center space-x-8">
-            <Link href="/features" className="text-sm font-medium text-gray-700 hover:text-gray-900">
-              Features
-            </Link>
-            <Link href="/contact" className="text-sm font-medium text-gray-700 hover:text-gray-900">
-              Contact
-            </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <ThemeToggle />
-            {!session ? (
-              <div className="flex items-center space-x-4">
-                <Link 
-                  href="/login" 
-                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
+    <header className="bg-background border-b sticky top-0 z-50">
+      <div className="container flex h-16 items-center justify-between px-4">
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={toggleSidebar}
+          >
+            <span className="sr-only">Toggle navigation</span>
+            <Sparkles className="h-4 w-4" />
+          </Button>
+          <Link href="/" className="font-semibold tracking-tight">
+            InkWell
+          </Link>
+
+          <nav className="hidden lg:flex items-center space-x-1">
+            {quickActions.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Button
+                  key={item.href}
+                  asChild
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  className={cn(
+                    'flex items-center space-x-2 text-sm',
+                    isActive && 'bg-accent'
+                  )}
                 >
-                  Sign in
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Sign up free
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {session.user?.name?.[0]?.toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {session.user?.name || 'User'}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {session.user?.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push('/dashboard')}>
-                      Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push('/profile')}>
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
+                  <Link href={item.href}>
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </Button>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" aria-label="Notifications">
+            <Bell className="h-4 w-4" />
+          </Button>
+          <ThemeToggle />
+          {session?.user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback>
+                      {session.user.name?.[0] || session.user.email?.[0] || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {session.user.name || 'User'}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {session.user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {navSections[2].items.map((item) => (
+                  <DropdownMenuItem key={item.href} asChild>
+                    <Link href={item.href}>{item.title}</Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild size="sm">
+              <Link href="/login">Sign In</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

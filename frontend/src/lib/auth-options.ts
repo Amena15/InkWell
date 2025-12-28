@@ -1,13 +1,55 @@
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
-import { PrismaClient } from '@prisma/client';
-import { type NextAuthOptions } from 'next-auth';
+import { DefaultSession, NextAuthOptions, User as NextAuthUser } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
+import axios from 'axios';
 
-const prisma = new PrismaClient();
+// Define our custom User type
+type Role = 'USER' | 'ADMIN';
+
+interface CustomUser extends NextAuthUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role: Role;
+  token?: string;
+}
+
+// Extend built-in types for NextAuth
+declare module 'next-auth' {
+  interface User {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role: Role;
+    token?: string;
+  }
+
+  interface Session extends DefaultSession {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role: Role;
+    };
+    accessToken?: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: Role;
+    accessToken?: string;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: 'jwt',
+  },
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -20,57 +62,93 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password are required');
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+        try {
+          // Call backend API for authentication
+          const API_BASE_URL =
+            process.env.NEXT_PUBLIC_API_URL ||
+            process.env.BACKEND_API_URL ||
+            'http://localhost:3001';
 
-        if (!user || !user.password) {
-          throw new Error('Invalid email or password');
+          const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+            email: credentials.email,
+            password: credentials.password
+          });
+
+          const { user, token } = response.data;
+
+          if (!user || !token) {
+            throw new Error('Invalid credentials');
+          }
+
+          // Store the token in localStorage for API calls
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('token', token);
+          }
+
+          // Return user with role and token
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || user.email.split('@')[0], // Use email prefix as name if not provided
+            role: user.role || 'USER',
+            token: token,
+          };
+        } catch (error: any) {
+          console.error('Auth error:', error);
+          throw new Error(error.response?.data?.error || error.message || 'Invalid email or password');
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          throw new Error('Invalid email or password');
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role || 'USER',
-          image: user.image,
-        };
       },
     }),
   ],
-  session: {
-    strategy: 'jwt',
-  },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Initial sign in
       if (user) {
-        token.id = user.id;
-        token.role = (user as any).role || 'USER';
+        return {
+          ...token,
+          id: user.id,
+          role: user.role || 'USER',
+          accessToken: user.token,
+        };
       }
       return token;
     },
     async session({ session, token }) {
-      if (session?.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+      // Make sure session.user exists, even if token is null
+      session.user = {
+        id: token?.id as string,
+        role: token?.role as 'USER' | 'ADMIN' || 'USER',
+        name: token?.name || session?.user?.name || null,
+        email: token?.email || session?.user?.email || null,
+        image: token?.picture || token?.image || session?.user?.image || null,
+      };
+
+      if (token?.accessToken) {
+        session.accessToken = token.accessToken as string;
       }
       return session;
     },
   },
   pages: {
     signIn: '/login',
-    signOut: '/login',
-    error: '/login',
+    signOut: '/',
+    error: '/api/auth/error', // Custom error page
+    newUser: '/register',
   },
-  secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
+  logger: {
+    error(code, metadata) {
+      console.error('Auth error:', { code, metadata });
+    },
+    warn(code) {
+      console.warn('Auth warning:', code);
+    },
+    debug(code, metadata) {
+      console.debug('Auth debug:', { code, metadata });
+    },
+  },
+  // Session configuration is already set at the top level with strategy: 'jwt'
+  secret: process.env.NEXTAUTH_SECRET,
 };
+
+export default authOptions;

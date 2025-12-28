@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { Code, FileText, MessageSquare, Zap } from 'lucide-react';
 
-export default function AIToolsPage() {
+type ReactNode = React.ReactNode;
+
+export default function AIToolsPage(): ReactNode {
   const tools = [
     {
       name: 'AI Writing Assistant',

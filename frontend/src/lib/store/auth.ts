@@ -64,7 +64,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       register: async (email: string, password: string, name?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authAPI.register({ email, password, name });
+          const response = await authAPI.signup({ email, password, name: name || '' });
           const { user, token } = response.data;
           set({
             user,

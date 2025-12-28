@@ -56,8 +56,8 @@ export default function RegisterPage() {
         throw new Error(errorData.error || 'Failed to create account');
       }
 
-      // Redirect to verification page or show success message
-      window.location.href = '/auth/verify-email';
+      // Redirect to login and show success toast there
+      window.location.href = '/login?registered=1';
     } catch (error) {
       console.error('Registration error:', error);
       setError(error instanceof Error ? error.message : 'An error occurred');

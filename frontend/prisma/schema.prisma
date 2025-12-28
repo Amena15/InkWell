@@ -22,6 +22,7 @@ model User {
   resetTokenExpiry  DateTime? @map("reset_token_expiry")
   accounts         Account[]
   sessions         Session[]
+  documents        Document[]
 
   @@map("users")
 }
@@ -49,6 +50,24 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  title        String
+  content      String
+  userId       String
+  isPublic     Boolean  @default(false)
+  tags         String   @default("[]") // Store as JSON string
+  folderId     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastOpenedAt DateTime?
+  wordCount    Int?
+  thumbnailUrl String?
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("documents")
 }
 
 model VerificationToken {

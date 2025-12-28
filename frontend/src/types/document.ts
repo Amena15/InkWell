@@ -16,7 +16,7 @@ export interface Document {
   updatedAt: string;
   lastOpenedAt?: string;
   wordCount?: number;
-  tags?: string[];
+  tags?: string[]; // Will be handled as JSON string in DB but parsed in code
   folderId?: string;
   thumbnailUrl?: string;
 }

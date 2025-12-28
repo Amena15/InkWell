@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CommonIcons } from '@/components/icons';
+import { MailIcon, LockIcon, UserIcon, UserPlusIcon, Loader2Icon, GithubIcon, ChromeIcon } from 'lucide-react';
+import { Icons } from '@/components/icons';
 import { useToast } from '@/components/ui/use-toast';
 
 interface SignupResponse {
@@ -61,7 +62,7 @@ export default function SignupPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4">
-            <CommonIcons.logo className="h-8 w-8 text-indigo-600" />
+            <Icons.userPlus className="h-8 w-8 text-indigo-600" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Create your account</h2>
           <p className="mt-2 text-sm text-gray-600">
@@ -80,7 +81,7 @@ export default function SignupPage() {
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <CommonIcons.user className="h-5 w-5 text-gray-400" />
+                  <UserIcon className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="name"
@@ -101,7 +102,7 @@ export default function SignupPage() {
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <CommonIcons.mail className="h-5 w-5 text-gray-400" />
+                  <MailIcon className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="email"
@@ -123,7 +124,7 @@ export default function SignupPage() {
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <CommonIcons.lock className="h-5 w-5 text-gray-400" />
+                  <Icons.lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="password"
@@ -147,7 +148,7 @@ export default function SignupPage() {
               >
                 {isLoading ? (
                   <>
-                    <CommonIcons.loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
+                    <Icons.loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
                     Creating account...
                   </>
                 ) : (
@@ -175,7 +176,7 @@ export default function SignupPage() {
                 }}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                <CommonIcons.google className="h-5 w-5" />
+                <Icons.google className="h-5 w-5" />
               </button>
               <button
                 type="button"
@@ -184,7 +185,7 @@ export default function SignupPage() {
                 }}
                 className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                <CommonIcons.github className="h-5 w-5" />
+                <Icons.github className="h-5 w-5" />
               </button>
             </div>
           </div>
